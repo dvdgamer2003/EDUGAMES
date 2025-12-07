@@ -89,7 +89,51 @@ const getQuizById = async (req, res) => {
     }
 };
 
+// @desc    Submit quiz result and mark assignment as completed
+// @route   POST /api/student/quiz/submit
+// @access  Private/Student
+const submitQuizResult = async (req, res) => {
+    try {
+        console.log('DEBUG: submitQuizResult called with body:', req.body);
+        const { quizId, assignmentId, score, totalQuestions } = req.body;
+        const student = await User.findById(req.user._id);
+
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        // Find the assignment
+        let assignment;
+        if (assignmentId) {
+            assignment = student.assignments.id(assignmentId);
+        }
+
+        // Fallback or validation
+        if (!assignment && quizId) {
+            assignment = student.assignments.find(
+                a => a.quizId && a.quizId.toString() === quizId && a.status === 'pending'
+            );
+        }
+
+        if (assignment) {
+            console.log('DEBUG: Assignment found, updating status. ID:', assignment._id);
+            assignment.status = 'completed';
+            // You could also save the score here if the schema supported it
+            await student.save();
+            console.log('DEBUG: Student saved successfully');
+            res.json({ message: 'Quiz submitted and assignment marked completed', xpGained: 0 }); // XP handled by xpController usually
+        } else {
+            // Even if not found (maybe already completed?), we accept the submission log
+            res.json({ message: 'Quiz result logged (no pending assignment found)' });
+        }
+    } catch (error) {
+        console.error('Error submitting quiz:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     getStudentTasks,
-    getQuizById
+    getQuizById,
+    submitQuizResult
 };

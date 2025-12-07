@@ -183,7 +183,7 @@ const MobileModelListScreen = ({ navigation }: any) => {
                 <Mobile3DModelViewer
                     visible={viewerVisible}
                     title={selectedModel.name}
-                    fileName={selectedModel.fileName}
+                    modelSource={selectedModel.fileName}
                     onClose={() => setViewerVisible(false)}
                 />
             )}

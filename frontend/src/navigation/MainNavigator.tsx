@@ -33,6 +33,7 @@ import LeaderboardScreen from '../screens/LeaderboardScreen';
 import ScienceScreen from '../screens/ScienceScreen';
 import QuizScreen from '../screens/QuizScreen';
 import QuizResult from '../screens/QuizResult';
+import ClassroomScreen from '../screens/ClassroomScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -84,6 +85,7 @@ const MainNavigator = () => {
             <Stack.Screen name="StudentAnalytics" component={StudentAnalyticsScreen} />
             <Stack.Screen name="StudentOnlineAssignments" component={StudentOnlineAssignmentsScreen} />
             <Stack.Screen name="TeacherChapterViewer" component={TeacherChapterViewerScreen} />
+            <Stack.Screen name="Classroom" component={ClassroomScreen} />
         </Stack.Navigator>
     );
 };

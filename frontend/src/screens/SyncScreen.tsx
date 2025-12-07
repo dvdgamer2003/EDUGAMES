@@ -141,7 +141,7 @@ const SyncScreen = ({ navigation }: any) => {
                 contentContainerStyle={[styles.content, containerStyle]}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
                 showsVerticalScrollIndicator={false}
-                style={{ marginTop: -40 }}
+                style={{ marginTop: -40, flex: 1 }}
             >
                 <Animated.View entering={FadeInDown.delay(100).duration(600)}>
                     <LinearGradient

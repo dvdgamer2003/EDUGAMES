@@ -121,7 +121,7 @@ export const getRandomQuiz = async (classNum: number = 6, subject: string = 'sci
 export const submitQuizResult = async (result: QuizResult, isConnected: boolean) => {
     if (isConnected) {
         try {
-            // await api.post('/quiz/results', result);
+            await api.post('/student/quiz/submit', result);
             console.log('Quiz result submitted online:', result);
         } catch (e) {
             console.error('Failed to submit quiz result, queuing...', e);

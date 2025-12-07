@@ -243,6 +243,12 @@ const ChapterListScreen = ({ route, navigation }: any) => {
                     keyExtractor={(item) => item._id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <MaterialCommunityIcons name="book-open-page-variant-outline" size={64} color="#ccc" />
+                            <Text style={styles.emptyText}>No chapters available for this subject yet.</Text>
+                        </View>
+                    }
                 />
             </View>
         </View>
@@ -488,6 +494,18 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
         color: '#fff',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: spacing.xxl,
+        gap: spacing.md,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#888',
+        fontWeight: '500',
+        textAlign: 'center',
     },
 });
 

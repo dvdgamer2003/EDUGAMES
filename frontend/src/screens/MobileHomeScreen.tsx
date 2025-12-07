@@ -119,6 +119,13 @@ const MobileHomeScreen = ({ navigation }: any) => {
             gradient: ['#FFD700', '#FFE57F'],
             onPress: () => navigation.navigate('Leaderboard'),
         },
+        {
+            id: '8',
+            title: 'Classroom',
+            icon: 'school',
+            gradient: ['#26A69A', '#80CBC4'],
+            onPress: () => navigation.navigate('Classroom'),
+        },
     ];
 
     return (

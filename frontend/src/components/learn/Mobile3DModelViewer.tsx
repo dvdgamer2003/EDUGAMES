@@ -13,28 +13,9 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 interface Mobile3DModelViewerProps {
     visible: boolean;
     title: string;
-    fileName: string;
+    modelSource: any;
     onClose: () => void;
 }
-
-// Helper function to get model source
-const getModelSource = (fileName: string): any => {
-    const modelMap: Record<string, any> = {
-        'thorax.glb': require('../../../assets/models/thorax.glb'),
-        '3d-allen-f-brain.glb': require('../../../assets/models/3d-allen-f-brain.glb'),
-        '3d-vh-f-blood-vasculature.glb': require('../../../assets/models/3d-vh-f-blood-vasculature.glb'),
-        '3d-vh-f-heart.glb': require('../../../assets/models/3d-vh-f-heart.glb'),
-        '3d-vh-f-kidney-l.glb': require('../../../assets/models/3d-vh-f-kidney-l.glb'),
-        '3d-vh-f-liver.glb': require('../../../assets/models/3d-vh-f-liver.glb'),
-        '3d-vh-f-lung.glb': require('../../../assets/models/3d-vh-f-lung.glb'),
-        '3d-vh-m-eye-l.glb': require('../../../assets/models/3d-vh-m-eye-l.glb'),
-        'heart-_whole.glb': require('../../../assets/models/heart-_whole.glb'),
-        'brain1.glb': require('../../../assets/models/brain1.glb'),
-        'digestivesystem.glb': require('../../../assets/models/digestivesystem.glb'),
-        'lungs1.glb': require('../../../assets/models/lungs1.glb'),
-    };
-    return modelMap[fileName] || require('../../../assets/models/thorax.glb');
-};
 
 const getHtmlContent = (modelUrl: string) => `
 <!DOCTYPE html>
@@ -122,15 +103,14 @@ const getHtmlContent = (modelUrl: string) => `
 </html>
 `;
 
-const Mobile3DModelViewer: React.FC<Mobile3DModelViewerProps> = ({ visible, title, fileName, onClose }) => {
+const Mobile3DModelViewer: React.FC<Mobile3DModelViewerProps> = ({ visible, title, modelSource, onClose }) => {
     const insets = useSafeAreaInsets();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
 
     // Resolve asset URI
-    const source = getModelSource(fileName);
-    const modelUri = Image.resolveAssetSource(source).uri;
+    const modelUri = Image.resolveAssetSource(modelSource).uri;
     const htmlContent = getHtmlContent(modelUri);
 
     return (

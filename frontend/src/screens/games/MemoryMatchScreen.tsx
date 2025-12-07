@@ -5,8 +5,8 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useAppTheme } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { spacing } from '../../theme';
-import Animated, { FadeInDown, withTiming, useAnimatedStyle, useSharedValue, BounceIn, ZoomIn } from 'react-native-reanimated';
+import { spacing, gradients, theme, shadows } from '../../theme';
+import Animated, { FadeInDown, withTiming, useAnimatedStyle, useSharedValue, BounceIn, ZoomIn, FlipInEasyY } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface Card {
@@ -28,62 +28,182 @@ const EDUCATIONAL_PAIRS = [
 
 import { soundManager } from '../../utils/soundEffects';
 
+import { useResponsive } from '../../hooks/useResponsive';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 interface CardComponentProps {
     card: Card;
     isFlipped: boolean;
     isMatched: boolean;
     onPress: () => void;
+    style?: any;
+    cardSize?: number;
 }
 
-const CardComponent: React.FC<CardComponentProps> = ({ card, isFlipped, isMatched, onPress }) => {
+const CardComponent: React.FC<CardComponentProps> = ({ card, isFlipped, isMatched, onPress, style, cardSize }) => {
+    const rotation = useSharedValue(0);
+
+    useEffect(() => {
+        rotation.value = withTiming((isFlipped || isMatched) ? 180 : 0, { duration: 400 });
+    }, [isFlipped, isMatched]);
+
+    const frontAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ rotateY: `${rotation.value + 180}deg` }],
+        };
+    });
+
+    const backAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ rotateY: `${rotation.value}deg` }],
+        };
+    });
+
     return (
-        <TouchableOpacity
-            onPress={onPress}
-            disabled={isFlipped || isMatched}
+        <Animated.View
+            entering={FadeInDown.delay(card.id * 50)}
             style={[
                 {
-                    width: '48%',
+                    width: cardSize || '30%',
                     aspectRatio: 1,
                     marginBottom: 12,
-                    borderRadius: 12,
-                    overflow: 'hidden',
+                    perspective: 1000,
                 },
+                style
             ]}
         >
-            <LinearGradient
-                colors={isMatched ? ['#4CAF50', '#2E7D32'] : isFlipped ? ['#2563EB', '#1E40AF'] : ['#E2E8F0', '#CBD5E1']}
-                style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: 12,
-                }}
+            <TouchableOpacity
+                onPress={onPress}
+                disabled={isFlipped || isMatched}
+                activeOpacity={1} // Feedback handled by animation
+                style={{ flex: 1 }}
             >
-                {(isFlipped || isMatched) && (
-                    <Text
+                {/* Back Face (Pattern/Gradient) - Visible when rot is 0 (value=0 -> -180) WAIT, logic check below */}
+                {/* 
+                   Let's restart logic for clarity:
+                   State 0 (Face Down): 
+                     - BackFace: 0deg (Visible) 
+                     - FrontFace: 180deg (Hidden)
+                   State 180 (Face Up):
+                     - BackFace: 180deg (Hidden)
+                     - FrontFace: 360deg (Visible) - or 0deg?
+                   
+                   If rotation goes 0 -> 180:
+                   Front Style: rotateY(rotation) -> 180 (Hidden? No 180 is hidden)
+                   My previous logic was mixed.
+                   
+                   Correct Standard Logic:
+                   backAnimatedStyle: rotateY(rotation)  [0 -> 180] (Start 0 Vis, End 180 Hid)
+                   frontAnimatedStyle: rotateY(rotation - 180) [-180 -> 0] (Start -180 Hid, End 0 Vis)
+                */}
+
+                {/* Front Face (Content/Matched) */}
+                <Animated.View
+                    style={[
+                        {
+                            position: 'absolute',
+                            width: '100%',
+                            height: '100%',
+                            backfaceVisibility: 'hidden',
+                            borderRadius: 16,
+                            ...shadows.md,
+                            backgroundColor: 'white', // Base needed
+                        },
+                        frontAnimatedStyle // Uses rotation - 180 logic logic below
+                    ]}
+                >
+                    <LinearGradient
+                        colors={
+                            isMatched
+                                ? ['#4CAF50', '#66BB6A']
+                                : ['#FFFFFF', '#F8FAFC']
+                        }
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
                         style={{
-                            color: '#fff',
-                            fontSize: 14,
-                            fontWeight: '600',
-                            textAlign: 'center',
+                            flex: 1,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            padding: 8,
+                            borderRadius: 16,
+                            borderWidth: isMatched ? 0 : 2,
+                            borderColor: isMatched ? 'transparent' : theme.colors.primary,
                         }}
                     >
-                        {card.content}
-                    </Text>
-                )}
-                {!isFlipped && !isMatched && (
-                    <MaterialCommunityIcons name="help" size={32} color="#94A3B8" />
-                )}
-            </LinearGradient>
-        </TouchableOpacity>
+                        <Text
+                            style={{
+                                color: isMatched ? '#fff' : '#333',
+                                fontSize: cardSize && cardSize < 80 ? 12 : 15,
+                                fontWeight: '700',
+                                textAlign: 'center',
+                            }}
+                            numberOfLines={4}
+                            adjustsFontSizeToFit
+                        >
+                            {card.content}
+                        </Text>
+                    </LinearGradient>
+                </Animated.View>
+
+                {/* Back Face (Pattern) */}
+                <Animated.View
+                    style={[
+                        {
+                            position: 'absolute',
+                            width: '100%',
+                            height: '100%',
+                            backfaceVisibility: 'hidden',
+                            borderRadius: 16,
+                            ...shadows.md,
+                            backgroundColor: theme.colors.primary,
+                        },
+                        backAnimatedStyle // Uses rotation logic
+                    ]}
+                >
+                    <LinearGradient
+                        colors={gradients.primary}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                            flex: 1,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderRadius: 16,
+                        }}
+                    >
+                        <MaterialCommunityIcons
+                            name="help-circle-outline"
+                            size={cardSize ? cardSize * 0.4 : 36}
+                            color="rgba(255,255,255,0.8)"
+                        />
+                    </LinearGradient>
+                </Animated.View>
+
+            </TouchableOpacity>
+        </Animated.View>
     );
 };
 
 const MemoryMatchScreen = () => {
     const navigation = useNavigation();
     const { addXP } = useAuth();
-    const theme = useTheme();
+    const themeContext = useTheme();
     const { isDark } = useAppTheme();
+    const { isTablet, isDesktop, width } = useResponsive();
+    const insets = useSafeAreaInsets();
+
+    // Grid Calculation
+    // Optimized for mobile to maximize card size
+    const isMobileSmall = width < 380;
+    const containerPadding = isDesktop ? spacing.xl * 2 : isTablet ? spacing.lg * 2 : spacing.md;
+    const availableWidth = width - (containerPadding * 2);
+
+    // 3 columns for mobile is standard for 12 cards (4 rows), fits well vertically without too much scrolling
+    const numColumns = isDesktop ? 6 : isTablet ? 4 : 3;
+
+    const gap = isDesktop ? 16 : isTablet ? 12 : 10; // Tighter gap on mobile
+    const cardSize = (availableWidth - (gap * (numColumns - 1))) / numColumns;
+
     const [cards, setCards] = useState<Card[]>([]);
     const [flippedCards, setFlippedCards] = useState<number[]>([]);
     const [matchedPairs, setMatchedPairs] = useState<number[]>([]);
@@ -93,6 +213,7 @@ const MemoryMatchScreen = () => {
     const [timeElapsed, setTimeElapsed] = useState(0);
 
     const styles = createStyles(isDark);
+    const TOTAL_PAIRS = 6;
 
     // Initialize sounds
     useEffect(() => {
@@ -117,7 +238,7 @@ const MemoryMatchScreen = () => {
     }, [gameActive]);
 
     useEffect(() => {
-        if (matchedPairs.length === EDUCATIONAL_PAIRS.length && gameActive) {
+        if (matchedPairs.length === TOTAL_PAIRS && gameActive) {
             endGame();
         }
     }, [matchedPairs]);
@@ -146,7 +267,12 @@ const MemoryMatchScreen = () => {
 
     const initializeGame = () => {
         const pairs: Card[] = [];
-        EDUCATIONAL_PAIRS.forEach((pair, i) => {
+        // Select random 6 pairs
+        const selectedPairs = [...EDUCATIONAL_PAIRS]
+            .sort(() => Math.random() - 0.5)
+            .slice(0, TOTAL_PAIRS);
+
+        selectedPairs.forEach((pair, i) => {
             pairs.push(
                 {
                     id: i * 2,
@@ -204,7 +330,7 @@ const MemoryMatchScreen = () => {
                 style={styles.container}
             >
                 <View style={styles.innerContainer}>
-                    <View style={styles.header}>
+                    <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
                         <IconButton
                             icon="arrow-left"
                             iconColor="#fff"
@@ -281,7 +407,7 @@ const MemoryMatchScreen = () => {
             style={styles.container}
         >
             <View style={styles.innerContainer}>
-                <View style={styles.header}>
+                <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
                     <IconButton
                         icon="arrow-left"
                         iconColor="#fff"
@@ -306,23 +432,34 @@ const MemoryMatchScreen = () => {
                     </View>
                     <View style={styles.statItem}>
                         <MaterialCommunityIcons name="cards" size={20} color="#fa709a" />
-                        <Text variant="bodyMedium" style={styles.statItemLabel}>Pairs: {matchedPairs.length}/{EDUCATIONAL_PAIRS.length}</Text>
+                        <Text variant="bodyMedium" style={styles.statItemLabel}>
+                            Pairs: {matchedPairs.length}/{TOTAL_PAIRS}
+                        </Text>
                     </View>
                 </LinearGradient>
 
-                <ScrollView style={styles.gameArea} contentContainerStyle={styles.scrollContent}>
+                <ScrollView
+                    style={styles.gameArea}
+                    overScrollMode="never"
+                    contentContainerStyle={[
+                        styles.scrollContent,
+                        { paddingHorizontal: containerPadding }
+                    ]}
+                >
                     <Text variant="bodyLarge" style={styles.instructions}>
                         Match the concepts with their meanings!
                     </Text>
 
-                    <View style={styles.grid}>
+                    <View style={[styles.grid, { gap }]}>
                         {cards.map((card) => (
                             <CardComponent
                                 key={card.id}
                                 card={card}
+                                cardSize={cardSize}
                                 isFlipped={flippedCards.includes(card.id)}
                                 isMatched={matchedPairs.includes(card.pairId)}
                                 onPress={() => handleCardPress(card.id)}
+                                style={{ marginBottom: 0 }} // Gap handles spacing now
                             />
                         ))}
                     </View>

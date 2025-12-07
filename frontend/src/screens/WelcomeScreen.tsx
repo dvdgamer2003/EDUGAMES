@@ -217,7 +217,7 @@ const BackgroundBubbles = () => {
     // Generate random bubbles
     const bubbles = React.useMemo(() => {
         const items = [];
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 6; i++) {
             items.push({
                 id: i,
                 size: Math.random() * 60 + 40, // 40-100
@@ -346,6 +346,7 @@ const WelcomeScreen = ({ navigation }: any) => {
                         <TouchableOpacity
                             onPress={() => setShowAuthModal(false)}
                             style={styles.backButton}
+                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                         >
                             <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
                         </TouchableOpacity>
@@ -370,7 +371,7 @@ const WelcomeScreen = ({ navigation }: any) => {
                         showsVerticalScrollIndicator={false}
                     >
                         <Animated.View
-                            entering={SlideInDown.springify().damping(15)}
+                            entering={SlideInDown.duration(500)}
                             style={styles.formContainer}
                         >
                             <Surface style={styles.formCard} elevation={3}>
@@ -500,7 +501,11 @@ const WelcomeScreen = ({ navigation }: any) => {
                                             textColor={theme.colors.onSurface}
                                             placeholderTextColor={theme.colors.textTertiary}
                                         />
-                                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                                        <TouchableOpacity
+                                            onPress={() => setShowPassword(!showPassword)}
+                                            style={styles.eyeIcon}
+                                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                                        >
                                             <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={theme.colors.outline} />
                                         </TouchableOpacity>
                                     </View>
@@ -570,7 +575,11 @@ const WelcomeScreen = ({ navigation }: any) => {
             {/* Animated Bubbles Background */}
             {/* Moved to bottom for z-index */}
 
-            <TouchableOpacity style={styles.skipButton} onPress={() => openAuthModal('login')}>
+            <TouchableOpacity
+                style={styles.skipButton}
+                onPress={() => openAuthModal('login')}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
                 <Text style={styles.skipText}>Skip</Text>
             </TouchableOpacity>
             <ScrollView
@@ -807,17 +816,22 @@ const styles = StyleSheet.create({
     loginScrollContent: {
         flexGrow: 1,
         padding: spacing.lg,
+        paddingBottom: spacing.xxl,
     },
     formContainer: {
         width: '100%',
-        maxWidth: 400,
+        maxWidth: 420,
         alignSelf: 'center',
-        marginTop: -spacing.xl, // Overlap with header
+        marginTop: -spacing.xxl, // Slightly more overlap
+        zIndex: 10,
     },
     formCard: {
         backgroundColor: '#fff',
         borderRadius: 24,
-        padding: spacing.xl,
+        padding: spacing.lg,
+        paddingVertical: spacing.xl,
+        marginHorizontal: spacing.sm, // Ensure margin on very small screens
+        ...shadows.lg,
     },
     inputGroup: {
         marginBottom: spacing.lg,
@@ -847,6 +861,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
         height: 56,
         fontSize: 16,
+        paddingHorizontal: 0,
+        textAlignVertical: 'center',
     },
     inputText: {
         flex: 1,

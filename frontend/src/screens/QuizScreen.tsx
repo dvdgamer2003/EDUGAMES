@@ -121,6 +121,7 @@ const QuizScreen = ({ navigation, route }: any) => {
             questions: quiz?.questions,
             userAnswers: userAnswers,
             title: quiz?.title,
+            assignmentId: quizData?.assignmentId,
         });
     };
 

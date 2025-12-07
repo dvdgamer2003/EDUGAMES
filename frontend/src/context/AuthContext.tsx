@@ -144,12 +144,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const userData = { _id, name, email: userEmail, role: userRole, status: userStatus, selectedClass: userClass };
 
-            setUser(userData);
-            setToken(authToken);
-            setIsGuest(false);
-            setXP(userXp || 0);
-            setStreak(userStreak || 0);
-
             await storeData(STORAGE_KEYS.USER_DATA, userData);
             await storeData(STORAGE_KEYS.USER_TOKEN, authToken);
             await storeData('user_xp', (userXp || 0).toString());
@@ -164,6 +158,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     synced: true
                 }));
             }
+
+            setUser(userData);
+            setToken(authToken);
+            setIsGuest(false);
+            setXP(userXp || 0);
+            setStreak(userStreak || 0);
         } catch (error) {
             console.error('Login failed', error);
             throw error;
@@ -193,17 +193,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const userDataObj = { _id, name, email, role, status, selectedClass: userClass };
 
-            setUser(userDataObj);
-            setToken(authToken);
-            setIsGuest(false);
-            setXP(0);
-            setStreak(0);
-
             await storeData(STORAGE_KEYS.USER_DATA, userDataObj);
             await storeData(STORAGE_KEYS.USER_TOKEN, authToken);
             await storeData('user_xp', '0');
             await storeData('user_streak', '0');
             await removeData('is_guest');
+
+            setUser(userDataObj);
+            setToken(authToken);
+            setIsGuest(false);
+            setXP(0);
+            setStreak(0);
 
             console.log('✅ Registration complete, user stored');
         } catch (error: any) {

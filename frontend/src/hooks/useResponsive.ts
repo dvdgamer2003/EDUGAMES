@@ -16,7 +16,7 @@ export const useResponsive = () => {
 
     // Container styles for centering content
     const containerStyle: ViewStyle = {
-        flex: 1,
+        flexGrow: 1,
         width: '100%',
         maxWidth: (isMobile ? '100%' : maxContentWidth) as DimensionValue,
         alignSelf: 'center',

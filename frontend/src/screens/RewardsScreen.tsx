@@ -99,7 +99,7 @@ const RewardsScreen = ({ navigation }: any) => {
             <ScrollView
                 contentContainerStyle={[styles.content, containerStyle]}
                 showsVerticalScrollIndicator={false}
-                style={{ marginTop: -40 }}
+                style={{ marginTop: -40, flex: 1 }}
             >
                 {/* Level Card */}
                 <Animated.View entering={FadeInDown.delay(100).duration(600)}>

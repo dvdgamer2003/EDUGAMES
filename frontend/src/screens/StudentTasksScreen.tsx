@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, Text, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import GradientBackground from '../components/ui/GradientBackground';
 import CustomCard from '../components/ui/CustomCard';
 import { useAuth } from '../context/AuthContext';
 import { useSync } from '../context/SyncContext';
 import api from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { theme, gradients, spacing, borderRadius, shadows } from '../theme';
 
 const TASKS_CACHE_KEY = 'student_tasks_cache';
 
@@ -19,9 +21,11 @@ const StudentTasksScreen = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => {
-        loadTasks();
-    }, [isOffline]);
+    useFocusEffect(
+        React.useCallback(() => {
+            loadTasks();
+        }, [isOffline])
+    );
 
     const loadTasks = async () => {
         setLoading(true);
@@ -67,48 +71,110 @@ const StudentTasksScreen = () => {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'completed': return '#10B981';
-            case 'pending': return '#F59E0B';
-            default: return '#6B7280';
+            case 'completed': return theme.colors.success;
+            case 'pending': return theme.colors.warning;
+            default: return theme.colors.textSecondary;
         }
     };
 
-    const renderTaskItem = (task: any, index: number) => (
-        <CustomCard key={index} style={styles.taskCard}>
-            <View style={styles.taskHeader}>
-                <View style={styles.taskIcon}>
-                    <Ionicons name="book" size={24} color="#4F46E5" />
-                </View>
-                <View style={styles.taskInfo}>
-                    <Text style={styles.taskTitle}>Chapter: {task.chapterName}</Text>
-                    <Text style={styles.taskDate}>Assigned: {new Date(task.assignedAt).toLocaleDateString()}</Text>
-                </View>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) + '20' }]}>
-                    <Text style={[styles.statusText, { color: getStatusColor(task.status) }]}>
-                        {task.status.toUpperCase()}
-                    </Text>
-                </View>
-            </View>
+    const renderTaskItem = (task: any, index: number) => {
+        // Determine type-specific labels and icons
+        let typeIcon = "book";
+        let typeLabel = "Chapter";
+        let title = task.chapterName;
 
-            {task.status === 'pending' && (
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => {
-                        // Navigate to the chapter content
-                        // Assuming we have a way to navigate to a specific chapter
-                        // For now, just go to Learn tab
-                        (navigation as any).navigate('Learn', {
-                            screen: 'ChapterList',
-                            params: { subject: task.subject } // You might need to adjust this based on your data structure
-                        });
-                    }}
-                >
-                    <Text style={styles.actionButtonText}>Start Learning</Text>
-                    <Ionicons name="arrow-forward" size={16} color="#fff" />
-                </TouchableOpacity>
-            )}
-        </CustomCard>
-    );
+        if (task.type === 'quiz') {
+            typeIcon = "help-circle";
+            typeLabel = "Quiz";
+            title = task.title;
+        } else if (task.type === 'teacherChapter') {
+            typeIcon = "school";
+            typeLabel = "Lesson";
+            title = task.title;
+        }
+
+        return (
+            <CustomCard key={index} style={styles.taskCard}>
+                <View style={styles.taskHeader}>
+                    <View style={[styles.taskIcon, { backgroundColor: theme.colors.primaryContainer }]}>
+                        <Ionicons name={typeIcon as any} size={24} color={theme.colors.primary} />
+                    </View>
+                    <View style={styles.taskInfo}>
+                        <Text style={styles.taskTitle}>{typeLabel}: {title}</Text>
+                        <Text style={styles.taskDate}>Assigned: {new Date(task.assignedAt).toLocaleDateString()}</Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) + '20' }]}>
+                        <Text style={[styles.statusText, { color: getStatusColor(task.status) }]}>
+                            {task.status.toUpperCase()}
+                        </Text>
+                    </View>
+                </View>
+
+                {task.status === 'pending' && (
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            if (task.type === 'quiz') {
+                                (navigation as any).navigate('Learn', {
+                                    screen: 'Quiz',
+                                    params: {
+                                        quizData: {
+                                            quizId: task.quizId,
+                                            title: task.title,
+                                            assignmentId: task.id
+                                        }
+                                    }
+                                });
+                            } else if (task.type === 'teacherChapter') {
+                                (navigation as any).navigate('Learn', {
+                                    screen: 'LessonReader',
+                                    params: {
+                                        chapterId: task.chapterId,
+                                        title: task.title,
+                                        content: task.content, // Assuming content is passed directly or fetched
+                                        subject: task.subject
+                                    }
+                                });
+                            } else {
+                                // Default/Chapter navigation
+                                const subjectCodeMap: Record<string, string> = {
+                                    'Science': 'sci',
+                                    'Mathematics': 'math',
+                                    'Math': 'math',
+                                    'English': 'eng',
+                                    'Computer': 'comp'
+                                };
+                                const code = subjectCodeMap[task.subject] || task.subject.toLowerCase().slice(0, 3);
+                                const subjectId = `${code}-${task.classNumber}`;
+                                const classId = `class-${task.classNumber}`;
+
+                                (navigation as any).navigate('Learn', {
+                                    screen: 'ChapterList',
+                                    params: {
+                                        subjectId: subjectId,
+                                        subjectName: task.subject,
+                                        classId: classId
+                                    }
+                                });
+                            }
+                        }}
+                    >
+                        <LinearGradient
+                            colors={gradients.primary}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.actionButton}
+                        >
+                            <Text style={styles.actionButtonText}>
+                                {task.type === 'quiz' ? 'Start Quiz' : 'Start Learning'}
+                            </Text>
+                            <Ionicons name="arrow-forward" size={16} color="#fff" />
+                        </LinearGradient>
+                    </TouchableOpacity>
+                )}
+            </CustomCard>
+        );
+    };
 
     return (
         <GradientBackground>
@@ -151,14 +217,14 @@ const StudentTasksScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
-        paddingTop: 60,
+        padding: spacing.xl,
+        paddingTop: spacing.xxl * 2.5, // Header space
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: spacing.xl,
     },
     title: {
         fontSize: 28,
@@ -169,10 +235,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(239, 68, 68, 0.8)', // Red for offline
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 15,
-        gap: 5,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
+        borderRadius: borderRadius.lg,
+        gap: spacing.xs,
     },
     offlineText: {
         color: '#fff',
@@ -183,53 +249,52 @@ const styles = StyleSheet.create({
         paddingBottom: 100, // Space for tab bar
     },
     taskCard: {
-        marginBottom: 15,
-        padding: 15,
+        marginBottom: spacing.lg,
+        padding: spacing.lg,
+        ...shadows.base,
     },
     taskHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 15,
+        marginBottom: spacing.lg,
     },
     taskIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#E0E7FF',
+        width: 48,
+        height: 48,
+        borderRadius: borderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15,
+        marginRight: spacing.lg,
     },
     taskInfo: {
         flex: 1,
     },
     taskTitle: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#1F2937',
+        fontWeight: '700',
+        color: theme.colors.onSurface,
+        marginBottom: 2,
     },
     taskDate: {
         fontSize: 12,
-        color: '#6B7280',
-        marginTop: 2,
+        color: theme.colors.textSecondary,
     },
     statusBadge: {
-        paddingHorizontal: 8,
+        paddingHorizontal: spacing.sm,
         paddingVertical: 4,
-        borderRadius: 10,
+        borderRadius: borderRadius.sm,
     },
     statusText: {
         fontSize: 10,
         fontWeight: 'bold',
     },
     actionButton: {
-        backgroundColor: '#4F46E5',
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 10,
-        borderRadius: 10,
-        gap: 5,
+        padding: spacing.md,
+        borderRadius: borderRadius.lg,
+        gap: spacing.sm,
     },
     actionButtonText: {
         color: '#fff',
@@ -244,12 +309,12 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 20,
         fontWeight: 'bold',
-        marginTop: 20,
+        marginTop: spacing.lg,
     },
     emptySubtext: {
         color: 'rgba(255,255,255,0.7)',
         fontSize: 14,
-        marginTop: 5,
+        marginTop: spacing.xs,
     },
 });
 

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Modal, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Modal, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text, Button, useTheme, IconButton, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
@@ -15,20 +15,33 @@ const QuizResult = ({ route, navigation }: any) => {
     const theme = useTheme();
     const netInfo = useNetInfo();
     const { containerStyle, isMobile } = useResponsive();
-    const { score, totalQuestions, correctAnswers, quizId, questions, userAnswers } = route.params;
+    const { score, totalQuestions, correctAnswers, quizId, questions, userAnswers, assignmentId } = route.params;
     const [showReview, setShowReview] = React.useState(false);
-
     const xpGained = correctAnswers * 10;
     const percentage = Math.round((correctAnswers / totalQuestions) * 100);
+    const [isSaving, setIsSaving] = React.useState(true);
 
     useEffect(() => {
-        const result = {
-            quizId,
-            score: correctAnswers,
-            totalQuestions,
-            timestamp: Date.now(),
+        const submit = async () => {
+            try {
+                const result = {
+                    quizId,
+                    assignmentId,
+                    score: correctAnswers,
+                    totalQuestions,
+                    timestamp: Date.now(),
+                };
+                console.log('Submitting Result with AssignmentID:', assignmentId);
+                await submitQuizResult(result, netInfo.isConnected || false);
+                console.log('Result submitted successfully');
+            } catch (err) {
+                console.error('Error submitting result:', err);
+            } finally {
+                setIsSaving(false);
+            }
         };
-        submitQuizResult(result, netInfo.isConnected || false);
+
+        submit();
 
         // Play success sound if score is good (> 50%)
         if (percentage >= 50) {
@@ -111,6 +124,20 @@ const QuizResult = ({ route, navigation }: any) => {
                         <Animated.Text entering={FadeInDown.delay(300)} style={styles.title}>
                             Quiz Complete!
                         </Animated.Text>
+
+                        <Animated.View entering={FadeInDown.delay(400)} style={{ marginBottom: 20 }}>
+                            {isSaving ? (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                    <ActivityIndicator size="small" color="#fff" />
+                                    <Text variant="bodyLarge" style={{ color: '#fff' }}>Saving Result...</Text>
+                                </View>
+                            ) : (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                    <MaterialCommunityIcons name="check-circle" size={20} color="#4CAF50" />
+                                    <Text variant="bodyLarge" style={{ color: '#fff', fontWeight: 'bold' }}>Result Saved</Text>
+                                </View>
+                            )}
+                        </Animated.View>
 
                         <Animated.View entering={FadeInDown.delay(500)} style={styles.statsContainer}>
                             <Surface style={styles.statCard} elevation={4}>
