@@ -19,6 +19,12 @@ const ClassroomScreen = () => {
     const [loading, setLoading] = useState(true);
     const [selectedChapter, setSelectedChapter] = useState<ClassroomItem | null>(null);
 
+    const [meta, setMeta] = useState({
+        className: 'Loading...',
+        schoolName: '',
+        teachers: [] as any[]
+    });
+
     React.useEffect(() => {
         loadContent();
     }, []);
@@ -26,7 +32,8 @@ const ClassroomScreen = () => {
     const loadContent = async () => {
         try {
             const data = await fetchClassroomContent();
-            setClassroomContent(data);
+            setClassroomContent(data.content);
+            setMeta(data.meta);
         } catch (error) {
             console.error('Failed to load classroom content', error);
         } finally {
@@ -48,12 +55,6 @@ const ClassroomScreen = () => {
             setSelectedChapter(item);
         }
     };
-
-    // Mock Data
-    const teachers = [
-        { id: 1, name: 'Mrs. Sharma', subject: 'Mathematics', avatar: 'https://i.pravatar.cc/150?img=1' },
-        { id: 2, name: 'Mr. Gupta', subject: 'Science', avatar: 'https://i.pravatar.cc/150?img=11' },
-    ];
 
     const liveClasses = [
         { id: 1, subject: 'Math', topic: 'Quadratic Equations', time: '10:00 AM', status: 'live' },
@@ -78,8 +79,8 @@ const ClassroomScreen = () => {
 
                 {/* Quick Stats or Welcome */}
                 <View style={styles.welcomeParams}>
-                    <Text style={styles.className}>Class 10-A</Text>
-                    <Text style={styles.schoolName}>Rural High School</Text>
+                    <Text style={styles.className}>{meta.className}</Text>
+                    <Text style={styles.schoolName}>{meta.schoolName}</Text>
                 </View>
             </LinearGradient>
 
@@ -110,14 +111,48 @@ const ClassroomScreen = () => {
                     {/* Teachers Horizontal Scroll */}
                     <Text style={styles.sectionTitle}>{t('classroom.myTeachers')}</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.teachersRow}>
-                        {teachers.map((teacher, index) => (
-                            <Animated.View key={teacher.id} entering={FadeInDown.delay(200 + index * 50)} style={styles.teacherCard}>
-                                <Image source={{ uri: teacher.avatar }} style={styles.teacherAvatar} />
-                                <Text style={styles.teacherName}>{teacher.name}</Text>
-                                <Text style={styles.teacherSubject}>{teacher.subject}</Text>
-                            </Animated.View>
-                        ))}
+                        {meta.teachers.length > 0 ? (
+                            meta.teachers.map((teacher, index) => (
+                                <Animated.View key={teacher.id} entering={FadeInDown.delay(200 + index * 50)} style={styles.teacherCard}>
+                                    <Image source={{ uri: teacher.avatar }} style={styles.teacherAvatar} />
+                                    <Text style={styles.teacherName}>{teacher.name}</Text>
+                                    <Text style={styles.teacherSubject}>{teacher.subject}</Text>
+                                </Animated.View>
+                            ))
+                        ) : (
+                            <Text style={{ color: '#666', marginLeft: 10, fontStyle: 'italic' }}>No teachers active yet.</Text>
+                        )}
                     </ScrollView>
+
+                    {/* Resources Section */}
+                    <Text style={styles.sectionTitle}>Learning Resources</Text>
+                    <View style={styles.resourcesRow}>
+                        <TouchableOpacity
+                            style={[styles.resourceCard, { backgroundColor: '#FFEBEE' }]}
+                            onPress={() => navigation.navigate('VideoLibrary')}
+                        >
+                            <LinearGradient
+                                colors={['#FF0000', '#CC0000']}
+                                style={styles.resourceIcon}
+                            >
+                                <Ionicons name="logo-youtube" size={24} color="#fff" />
+                            </LinearGradient>
+                            <Text style={styles.resourceTitle}>YouTube Videos</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.resourceCard, { backgroundColor: '#E0F2F1' }]}
+                            onPress={() => navigation.navigate('StudentOnlineAssignments')}
+                        >
+                            <LinearGradient
+                                colors={['#11998e', '#38ef7d']}
+                                style={styles.resourceIcon}
+                            >
+                                <Ionicons name="desktop-outline" size={24} color="#fff" />
+                            </LinearGradient>
+                            <Text style={styles.resourceTitle}>E-Learning</Text>
+                        </TouchableOpacity>
+                    </View>
 
                     {/* Class Stream */}
                     <Text style={styles.sectionTitle}>Class Stream</Text>
@@ -299,6 +334,39 @@ const styles = StyleSheet.create({
     },
     teachersRow: {
         marginBottom: spacing.md,
+    },
+    // Resource Styles
+    resourcesRow: {
+        flexDirection: 'row',
+        marginBottom: spacing.lg,
+        paddingHorizontal: spacing.xs,
+    },
+    resourceCard: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        borderRadius: 16,
+        marginRight: spacing.md,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    resourceIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: spacing.sm,
+    },
+    resourceTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#333',
+        flex: 1,
     },
     teacherCard: {
         backgroundColor: '#fff',

@@ -41,6 +41,7 @@ const TeacherHomeScreen = () => {
         { title: 'Quiz Creator', icon: 'create', screen: 'TeacherQuizCreator', color: '#EC4899' },
         { title: 'Class Analytics', icon: 'stats-chart', screen: 'TeacherAnalytics', color: '#3B82F6' },
         { title: 'Classroom', icon: 'school', screen: 'TeacherClassroom', color: '#6366F1' },
+        { title: 'Video Manager', icon: 'logo-youtube', screen: 'TeacherVideoManager', color: '#FF0000' },
     ];
 
     return (

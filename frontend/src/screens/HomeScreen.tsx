@@ -134,7 +134,7 @@ const HomeScreen = ({ navigation }: any) => {
             icon: 'school-outline',
             color: '#A78BFA',
             gradient: ['#8E2DE2', '#4A00E0'], // Electric Violet
-            onPress: () => navigation.navigate('StudentOnlineAssignments'),
+            onPress: () => navigation.navigate('Classroom'),
         },
     ];
 

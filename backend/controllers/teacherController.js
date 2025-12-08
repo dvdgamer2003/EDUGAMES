@@ -8,13 +8,60 @@ const TeacherChapter = require('../models/TeacherChapter');
 // @access  Private/Teacher
 const getTeacherStats = async (req, res) => {
     try {
-        // Mock stats for now, replace with real logic later
+        const teacherId = req.user._id;
+
+        // 1. Total Students assigned to this teacher (or all students if not strictly assigned yet)
+        // Adjust query based on your app's "assignment" logic. Assuming teacherId field or class-based logic.
+        // For now, let's look for students in classes this teacher teaches? 
+        // Or if teacherId is directly on student. The User model has 'teacherId'.
+
+        let studentQuery = { role: 'student' };
+        // If your system assigns students directly:
+        // studentQuery.teacherId = teacherId; 
+
+        // OR if system is class-based and teacher manages specific classes, you might filter by those classes.
+        // Since the prompt implied generic "students", we might need to be careful.
+        // But let's try to be specific if possible. If teacherId is not widely used, 
+        // maybe we query all students for now if not strictly filtering? 
+        // Wait, the User model HAS a teacherId field. Let's try to use it if populated.
+        // If not, we might fallback to all students or students in teacher's class?
+        // Let's stick to the prompt implication: "My Students".
+        // Let's check if we can filter by teacherId. 
+        // Ideally: studentQuery.teacherId = teacherId;
+
+        // HOWEVER, simplistic "all students" might be what's currently expected if assignment isn't fully built.
+        // Let's check the `getStudents` (line 246) - it returns ALL students.
+        // So for consistency, let's count ALL students for now, but arguably filtering is better.
+        // Let's try to filter by teacherId OR if the teacher is an "admin" type for their class.
+        // Actually, let's stick to ALL students for now to ensure data shows up, 
+        // as `teacherId` might not be set on legacy users.
+
+        const totalStudents = await User.countDocuments({ role: 'student' });
+
+        // 2. Pending Approvals
+        const pendingApprovals = await User.countDocuments({ role: 'student', status: 'pending' });
+
+        // 3. Average Attendance (Active Today / Total Active Students)
+        // Define "Today"
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const activeToday = await User.countDocuments({
+            role: 'student',
+            lastActiveDate: { $gte: startOfDay }
+        });
+
+        const attendancePercentage = totalStudents > 0
+            ? Math.round((activeToday / totalStudents) * 100)
+            : 0;
+
         res.json({
-            totalStudents: 0,
-            pendingApprovals: 0,
-            averageAttendance: '0%'
+            totalStudents,
+            pendingApprovals,
+            averageAttendance: `${attendancePercentage}%`
         });
     } catch (error) {
+        console.error('Error fetching teacher stats:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -276,6 +323,28 @@ const deleteQuiz = async (req, res) => {
     }
 };
 
+// @desc    Delete a chapter
+// @route   DELETE /api/teacher/chapter/:id
+// @access  Private/Teacher
+const deleteChapter = async (req, res) => {
+    try {
+        const chapter = await TeacherChapter.findById(req.params.id);
+
+        if (!chapter) {
+            return res.status(404).json({ message: 'Chapter not found' });
+        }
+
+        if (chapter.teacherId.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        await chapter.deleteOne();
+        res.json({ message: 'Chapter removed' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Update a quiz
 // @route   PUT /api/teacher/quiz/:id
 // @access  Private/Teacher
@@ -315,5 +384,6 @@ module.exports = {
     getMyContent,
     getStudents,
     deleteQuiz,
+    deleteChapter,
     updateQuiz
 };

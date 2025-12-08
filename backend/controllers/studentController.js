@@ -141,9 +141,12 @@ const submitQuizResult = async (req, res) => {
 // @desc    Get all classroom content (chapters & quizzes) for the student's class
 // @route   GET /api/student/classroom
 // @access  Private/Student
+// @desc    Get all classroom content (chapters & quizzes) for the student's class
+// @route   GET /api/student/classroom
+// @access  Private/Student
 const getClassroomContent = async (req, res) => {
     try {
-        const student = await User.findById(req.user._id);
+        const student = await User.findById(req.user._id).populate('instituteId', 'name');
         if (!student || !student.selectedClass) {
             return res.status(400).json({ message: 'Student class not found' });
         }
@@ -154,20 +157,42 @@ const getClassroomContent = async (req, res) => {
 
         const chapters = await TeacherChapter.find({ classNumber })
             .select('title subject content createdAt teacherId')
-            .populate('teacherId', 'name');
+            .populate('teacherId', 'name avatar');
 
         const quizzes = await TeacherQuiz.find({ classNumber })
             .select('title subject description questions createdAt teacherId')
-            .populate('teacherId', 'name');
+            .populate('teacherId', 'name avatar');
 
-        // Combine and format
+        // Extract unique teachers from content
+        const uniqueTeacherMap = new Map();
+
+        const processTeacher = (contentItem) => {
+            if (contentItem.teacherId) {
+                const tid = contentItem.teacherId._id.toString();
+                if (!uniqueTeacherMap.has(tid)) {
+                    uniqueTeacherMap.set(tid, {
+                        id: tid,
+                        name: contentItem.teacherId.name,
+                        subject: contentItem.subject, // Assumes teacher teaches this subject
+                        avatar: contentItem.teacherId.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(contentItem.teacherId.name)}&background=random`
+                    });
+                }
+            }
+        };
+
+        chapters.forEach(processTeacher);
+        quizzes.forEach(processTeacher);
+
+        const teachers = Array.from(uniqueTeacherMap.values());
+
+        // Combine and format content
         const content = [
             ...chapters.map(c => ({
                 id: c._id,
                 type: 'chapter',
                 title: c.title,
-                subtitle: c.subject, // Map subject to subtitle
-                description: c.content ? c.content.substring(0, 100) + '...' : '', // Preview
+                subtitle: c.subject,
+                description: c.content ? c.content.substring(0, 100) + '...' : '',
                 fullContent: c.content,
                 teacher: c.teacherId ? c.teacherId.name : 'Unknown',
                 date: c.createdAt,
@@ -182,14 +207,21 @@ const getClassroomContent = async (req, res) => {
                 teacher: q.teacherId ? q.teacherId.name : 'Unknown',
                 date: q.createdAt,
                 icon: 'format-list-checks',
-                questions: q.questions // Include questions for rendering/navigating
+                questions: q.questions
             }))
         ];
 
         // Sort by date descending
         content.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        res.json(content);
+        res.json({
+            meta: {
+                className: `Class ${student.selectedClass}`,
+                schoolName: student.instituteId ? student.instituteId.name : 'Rural High School', // Fallback
+                teachers: teachers
+            },
+            content: content
+        });
     } catch (error) {
         console.error('Error fetching classroom content:', error);
         res.status(500).json({ message: 'Server Error' });

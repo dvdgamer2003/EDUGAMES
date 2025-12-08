@@ -43,7 +43,28 @@ const TeacherClassroomScreen = () => {
                         <Ionicons name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
                     <Text style={styles.title}>Classroom Preview</Text>
-                    <View style={{ width: 40 }} />
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => {
+                            Alert.alert(
+                                'Create Content',
+                                'What would you like to create?',
+                                [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    {
+                                        text: 'New Quiz',
+                                        onPress: () => (navigation as any).navigate('TeacherQuizCreator')
+                                    },
+                                    {
+                                        text: 'New Chapter',
+                                        onPress: () => (navigation as any).navigate('TeacherContentManager')
+                                    }
+                                ]
+                            );
+                        }}
+                    >
+                        <Ionicons name="add" size={24} color="#fff" />
+                    </TouchableOpacity>
                 </View>
 
                 {loading ? (
@@ -127,10 +148,8 @@ const TeacherClassroomScreen = () => {
                                                                     if (item.type === 'quiz') {
                                                                         await api.delete(`/teacher/quiz/${item._id}`);
                                                                     } else {
-                                                                        // Implement delete for chapter if needed
-                                                                        // await api.delete(`/teacher/chapter/${item._id}`);
-                                                                        Alert.alert('Info', 'Chapter deletion not implemented yet');
-                                                                        return;
+                                                                        // Implement delete for chapter
+                                                                        await api.delete(`/teacher/chapter/${item._id}`);
                                                                     }
                                                                     fetchContent();
                                                                 } catch (error) {

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getTeacherStats, createQuiz, assignQuiz, assignChapter, createChapter, assignCustomChapter, getMyContent, getStudents, deleteQuiz, updateQuiz } = require('../controllers/teacherController');
+const { getTeacherStats, createQuiz, assignQuiz, assignChapter, createChapter, assignCustomChapter, getMyContent, getStudents, deleteQuiz, updateQuiz, deleteChapter } = require('../controllers/teacherController');
 const { protect, teacherOnly } = require('../middleware/auth');
 
 router.get('/stats', protect, teacherOnly, getTeacherStats);
@@ -13,5 +13,6 @@ router.post('/assign-quiz', protect, teacherOnly, assignQuiz);
 router.post('/assign-chapter', protect, teacherOnly, assignChapter);
 router.post('/chapter', protect, teacherOnly, createChapter);
 router.post('/assign-custom-chapter', protect, teacherOnly, assignCustomChapter);
+router.delete('/chapter/:id', protect, teacherOnly, deleteChapter);
 
 module.exports = router;
