@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { Text, Surface, useTheme, Button, IconButton } from 'react-native-paper';
 import Animated, {
@@ -16,8 +16,10 @@ import { useGameProgress } from '../../hooks/useGameProgress';
 import { soundManager } from '../../utils/soundEffects';
 
 const { width } = Dimensions.get('window');
-const CELL_SIZE = (width - 60) / 2; // Simple 2x2 layout
-const ALLELE_SIZE = 50;
+const HEADER_WIDTH = 70;
+const PADDING = 20;
+const CELL_SIZE = (width - HEADER_WIDTH - PADDING * 2) / 2;
+const ALLELE_SIZE = 45;
 
 type Allele = 'T' | 't' | 'B' | 'b' | 'P' | 'p';
 interface Parent {
@@ -103,78 +105,89 @@ const GeneticsLabScreen = () => {
 
     const currentLevel = LEVELS[currentLevelIdx];
 
-    // Ref to measure grid positions (Simplified: we assume fixed layout)
-    // Top-Left: ~ 80, 200 ???
-    // Ideally we use a measure logic, but for this prototype we'll use hit-testing logic based on percentages of screen width.
+    // Refs to store layout measurements
+    const gridLayoutRef = useRef<{ x: number, y: number, width: number, height: number } | null>(null);
 
     const handleDrop = (allele: Allele, absX: number, absY: number) => {
-        // Rudimentary Hit Testing
-        // Grid is roughly centered.
-        // Let's divide screen into 4 quadrants for the grid area.
+        // Fallback or deprecated - we use handleDropWithMeasurement now.
+        // But if needed, the manual logic would be:
+        // const gridTop = 280; 
+        // const startX = (width - ((CELL_SIZE * 2) + HEADER_WIDTH)) / 2 + HEADER_WIDTH;
+    };
 
-        // This relies on the UI layout being consistent.
-        // A better way is to check which "Slot" in the grid is closest.
+    // We will use a ref for the Container View and measure it legally.
+    const containerRef = useRef<View>(null);
+    const [dropZones, setDropZones] = useState<{ row: number, col: number, x: number, y: number, width: number, height: number }[]>([]);
 
-        // Grid Top starts approx 250px down?
-        // Let's assume a simplified zones logic for the 2x2 grid.
-        // Row 1: Y 300-450, Row 2: Y 450-600
-        // Col 1: X 50-width/2, Col 2: X width/2-width-50
+    // We can't easily repeatedly measure in React Native without triggering it.
+    // Enhanced Approach: Update `dropZones` on layout.
+    // However, onLayout gives relative coordinates. 
+    // We'll use a simpler robust heuristic: The grid is large.
 
-        // Note: This is fragile but fast for prototyping.
+    // Let's fallback to the View measure method when measuring is needed, or stick to the simplified logic but making it relative to the VIEW measurement not Screen constants.
 
-        const gridTop = 280;
-        const rowHeight = CELL_SIZE;
-        const colWidth = CELL_SIZE;
-        const startX = (width - (colWidth * 2)) / 2;
+    const handleLayout = (event: any) => {
+        const { x, y, width, height } = event.nativeEvent.layout;
+        // This x,y is relative to parent.
+    };
 
-        // Determine Row
-        let row = -1;
-        if (absY > gridTop && absY < gridTop + rowHeight) row = 0;
-        else if (absY > gridTop + rowHeight && absY < gridTop + (rowHeight * 2)) row = 1;
+    const dropZoneRefs = useRef<{ [key: string]: View | null }>({});
 
-        // Determine Col
-        let col = -1;
-        if (absX > startX && absX < startX + colWidth) col = 0;
-        else if (absX > startX + colWidth && absX < startX + (colWidth * 2)) col = 1;
+    const setDropZoneRef = (row: number, col: number, ref: View | null) => {
+        dropZoneRefs.current[`${row}-${col}`] = ref;
+    };
 
-        if (row !== -1 && col !== -1) {
-            updateGrid(row, col, allele);
+    const handleDropWithMeasurement = async (allele: Allele, absX: number, absY: number) => {
+        // Find which cell contains the point (absX, absY)
+        // We iterate through our refs and measure them.
+
+        let targetRow = -1;
+        let targetCol = -1;
+
+        for (let r = 0; r < 2; r++) {
+            for (let c = 0; c < 2; c++) {
+                const ref = dropZoneRefs.current[`${r}-${c}`];
+                if (ref) {
+                    const isInside = await new Promise<boolean>((resolve) => {
+                        ref.measure((x, y, width, height, pageX, pageY) => {
+                            if (absX >= pageX && absX <= pageX + width &&
+                                absY >= pageY && absY <= pageY + height) {
+                                resolve(true);
+                            } else {
+                                resolve(false);
+                            }
+                        });
+                    });
+
+                    if (isInside) {
+                        targetRow = r;
+                        targetCol = c;
+                        break;
+                    }
+                }
+            }
+            if (targetRow !== -1) break;
+        }
+
+        if (targetRow !== -1 && targetCol !== -1) {
+            updateGrid(targetRow, targetCol, allele);
         }
     };
 
     const updateGrid = (row: number, col: number, allele: Allele) => {
-        // Check if this allele belongs here.
-        // Parent 1 (Top) provides the first letter (conventionally, or we sort)
-        // Parent 2 (Left) provides the second.
-
-        // Actually, Punnett squares inherit one from Top Column and one from Left Row.
         const expectedTop = currentLevel.parent1[col];
         const expectedLeft = currentLevel.parent2[row];
 
-        // Did the user drop the correct one?
-        // Let's just append to the cell if it's not full.
         setGridState(prev => {
             const currentVal = prev[row][col];
-            if (currentVal.length >= 2) return prev; // Full
+            if (currentVal.length >= 2) return prev;
 
-            // Check if valid move:
-            // If cell is empty, it needs to match EITHER Top or Left (whichever hasn't been placed).
-            // But simplified: Just verify if drag source matches? 
-            // We passed 'allele'. 
-
-            // Allow placement -> Validation later? Or validation on drop?
-            // Validation on drop:
             if (allele !== expectedTop && allele !== expectedLeft) {
                 soundManager.playWrong();
                 return prev;
             }
 
-            // Prevent duplicates if specifically strictly enforcing slots?
-            // Let's just add it.
             const newVal = currentVal + allele;
-            // Sort to normalize (Tt vs tT -> Tt) if mostly uppercase first
-            // But let's just accept drag.
-
             soundManager.playClick();
 
             const newGrid = [...prev];
@@ -189,15 +202,12 @@ const GeneticsLabScreen = () => {
     }, [gridState]);
 
     const checkCompletion = () => {
-        // Check if grid matches solution
         let isComplete = true;
         for (let r = 0; r < 2; r++) {
             for (let c = 0; c < 2; c++) {
                 const cell = gridState[r][c];
-                // Normalize for comparison
                 const sortedCell = cell.split('').sort().join('');
                 const sortedSol = currentLevel.solution[r][c].split('').sort().join('');
-
                 if (sortedCell !== sortedSol) isComplete = false;
             }
         }
@@ -206,7 +216,6 @@ const GeneticsLabScreen = () => {
             setCompleted(true);
             soundManager.playCorrect();
             addScore(100);
-            // Show finish dialog or next level?
         }
     };
 
@@ -220,20 +229,26 @@ const GeneticsLabScreen = () => {
         }
     };
 
-    const resetLevel = () => {
-        setGridState([["", ""], ["", ""]]);
-        setCompleted(false);
-    };
-
     return (
         <GameLayout title="Genetics Lab" score={score} lives={3}>
             <GestureHandlerRootView style={{ flex: 1 }}>
                 <View style={styles.container}>
                     <LinearGradient colors={['#E8F5E9', '#A5D6A7']} style={styles.background} />
 
+                    {/* Header with Help Button */}
                     <Surface style={styles.headerCard} elevation={2}>
-                        <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>{currentLevel.title}</Text>
-                        <Text variant="bodySmall">{currentLevel.description}</Text>
+                        <View style={styles.headerRow}>
+                            <View style={{ flex: 1 }}>
+                                <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>{currentLevel.title}</Text>
+                                <Text variant="bodySmall">{currentLevel.description}</Text>
+                            </View>
+                            <IconButton
+                                icon="help-circle-outline"
+                                size={24}
+                                iconColor="#2E7D32"
+                                onPress={() => setShowTutorial(true)}
+                            />
+                        </View>
                     </Surface>
 
                     {/* Punnett Square Layout */}
@@ -242,8 +257,8 @@ const GeneticsLabScreen = () => {
                         <View style={styles.topRow}>
                             <View style={styles.corner} />
                             {currentLevel.parent1.map((a, i) => (
-                                <View key={`p1-${i}`} style={styles.headerCell}>
-                                    <DraggableAllele allele={a} source="top" onDrop={handleDrop} disabled={completed} />
+                                <View key={`p1-${i}`} style={styles.topHeaderCell}>
+                                    <DraggableAllele allele={a} source="top" onDrop={handleDropWithMeasurement} disabled={completed} />
                                 </View>
                             ))}
                         </View>
@@ -252,12 +267,17 @@ const GeneticsLabScreen = () => {
                         {currentLevel.parent2.map((pAllele, rIdx) => (
                             <View key={`row-${rIdx}`} style={styles.gridRow}>
                                 {/* Left Parent */}
-                                <View style={styles.headerCell}>
-                                    <DraggableAllele allele={pAllele} source="left" onDrop={handleDrop} disabled={completed} />
+                                <View style={styles.leftHeaderCell}>
+                                    <DraggableAllele allele={pAllele} source="left" onDrop={handleDropWithMeasurement} disabled={completed} />
                                 </View>
                                 {/* Grid Cells */}
                                 {[0, 1].map(cIdx => (
-                                    <View key={`cell-${rIdx}-${cIdx}`} style={styles.cell}>
+                                    <View
+                                        key={`cell-${rIdx}-${cIdx}`}
+                                        style={styles.cell}
+                                        ref={ref => setDropZoneRef(rIdx, cIdx, ref)}
+                                        collapsable={false} // Important for measure
+                                    >
                                         <Text style={styles.cellText}>{gridState[rIdx][cIdx]}</Text>
                                     </View>
                                 ))}
@@ -299,7 +319,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
-        paddingTop: 20
+        paddingTop: 100
     },
     background: {
         ...StyleSheet.absoluteFillObject,
@@ -308,22 +328,34 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 12,
         backgroundColor: 'rgba(255,255,255,0.9)',
-        marginBottom: 30,
+        marginBottom: 20, // Reduced margin
         width: width - 40
     },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
     gridContainer: {
-        // marginTop: 20
+        marginTop: 10,
+        alignItems: 'center'
     },
     topRow: {
         flexDirection: 'row',
     },
     corner: {
-        width: 60,
+        width: HEADER_WIDTH,
         height: 60,
     },
-    headerCell: {
+    topHeaderCell: {
         width: CELL_SIZE,
         height: 60,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    leftHeaderCell: {
+        width: HEADER_WIDTH,
+        height: CELL_SIZE,
         justifyContent: 'center',
         alignItems: 'center',
     },

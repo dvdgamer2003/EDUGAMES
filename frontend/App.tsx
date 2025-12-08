@@ -82,10 +82,29 @@ export default function App() {
             <SyncProvider>
               <StatusBar style="auto" />
               <AppNavigator />
+              <BackendHealthCheck />
             </SyncProvider>
           </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
+}
+
+// Small component to handle the check using the configured API service
+import api from './src/services/api';
+
+function BackendHealthCheck() {
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        await api.get('/health');
+        console.log('\n🚀 BACKEND CONNECTED SUCCESSFULLY\n');
+      } catch (error) {
+        console.log('\n❌ BACKEND CONNECTION FAILED: Make sure the backend server is running.\n');
+      }
+    };
+    checkHealth();
+  }, []);
+  return null;
 }

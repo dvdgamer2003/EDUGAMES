@@ -35,48 +35,51 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             statusBarTranslucent
         >
             <View style={styles.container}>
-                <Animated.View entering={ZoomIn.duration(400)} style={styles.content}>
-                    <Surface style={styles.card} elevation={5}>
-                        {lottieSource && (
-                            <View style={styles.lottieContainer}>
-                                <LottieView
-                                    source={lottieSource}
-                                    autoPlay
-                                    loop
-                                    style={styles.lottie}
-                                />
+                <Animated.View entering={ZoomIn.duration(400)}>
+                    <View style={styles.content}>
+                        <Surface style={styles.card} elevation={5}>
+                            {lottieSource && (
+                                <View style={styles.lottieContainer}>
+                                    <LottieView
+                                        source={lottieSource}
+                                        autoPlay
+                                        loop
+                                        style={styles.lottie}
+                                    />
+                                </View>
+                            )}
+
+                            <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
+                                {title}
+                            </Text>
+
+                            <View style={styles.instructionsContainer}>
+                                {instructions.map((step, index) => (
+                                    <Animated.View
+                                        key={index}
+                                        entering={SlideInDown.delay(index * 200).springify()}
+                                    >
+                                        <View style={styles.stepRow}>
+                                            <View style={[styles.stepBadge, { backgroundColor: theme.colors.primaryContainer }]}>
+                                                <Text style={[styles.stepNumber, { color: theme.colors.primary }]}>{index + 1}</Text>
+                                            </View>
+                                            <Text variant="bodyLarge" style={styles.stepText}>{step}</Text>
+                                        </View>
+                                    </Animated.View>
+                                ))}
                             </View>
-                        )}
 
-                        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
-                            {title}
-                        </Text>
-
-                        <View style={styles.instructionsContainer}>
-                            {instructions.map((step, index) => (
-                                <Animated.View
-                                    key={index}
-                                    entering={SlideInDown.delay(index * 200).springify()}
-                                    style={styles.stepRow}
-                                >
-                                    <View style={[styles.stepBadge, { backgroundColor: theme.colors.primaryContainer }]}>
-                                        <Text style={[styles.stepNumber, { color: theme.colors.primary }]}>{index + 1}</Text>
-                                    </View>
-                                    <Text variant="bodyLarge" style={styles.stepText}>{step}</Text>
-                                </Animated.View>
-                            ))}
-                        </View>
-
-                        <Button
-                            mode="contained"
-                            onPress={onStart}
-                            style={styles.button}
-                            contentStyle={{ paddingVertical: 8 }}
-                            labelStyle={{ fontSize: 18, fontWeight: 'bold' }}
-                        >
-                            Start Game
-                        </Button>
-                    </Surface>
+                            <Button
+                                mode="contained"
+                                onPress={onStart}
+                                style={styles.button}
+                                contentStyle={{ paddingVertical: 8 }}
+                                labelStyle={{ fontSize: 18, fontWeight: 'bold' }}
+                            >
+                                Start Game
+                            </Button>
+                        </Surface>
+                    </View>
                 </Animated.View>
             </View>
         </Modal>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Text, useTheme, IconButton, Surface } from 'react-native-paper';
-import Markdown from 'react-native-markdown-display';
+import Markdown, { RenderRules } from 'react-native-markdown-display';
 import GradientBackground from '../../components/ui/GradientBackground';
 import CustomButton from '../../components/ui/CustomButton';
 import { spacing, gradients, borderRadius } from '../../theme';
@@ -23,6 +23,27 @@ const LessonReaderScreen = ({ route, navigation }: any) => {
 
     const styles = createStyles(isDark);
     const mdStyles = createMarkdownStyles(isDark);
+
+    const rules: RenderRules = {
+        image: (node, children, parent, styles) => {
+            const { src, alt } = node.attributes;
+            return (
+                <Image
+                    key={node.key}
+                    style={{
+                        width: '100%',
+                        height: 200,
+                        resizeMode: 'contain',
+                        borderRadius: 12,
+                        marginVertical: 10,
+                        backgroundColor: isDark ? '#1E293B' : '#F5F5F7',
+                    }}
+                    source={{ uri: src }}
+                    accessibilityLabel={alt}
+                />
+            );
+        },
+    };
 
     const handleComplete = async () => {
         if (!completed) {
@@ -98,7 +119,7 @@ const LessonReaderScreen = ({ route, navigation }: any) => {
 
                         {/* Markdown Content */}
                         <View style={styles.markdownContainer}>
-                            <Markdown style={mdStyles}>
+                            <Markdown style={mdStyles} rules={rules}>
                                 {content}
                             </Markdown>
                         </View>

@@ -42,6 +42,11 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/student', require('./routes/studentRoutes'));
 
+// Health check route
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', message: 'Backend is running' });
+});
+
 // Base route
 app.get('/', (req, res) => {
     res.send('Rural Learning App API is running');

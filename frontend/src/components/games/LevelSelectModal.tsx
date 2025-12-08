@@ -40,53 +40,55 @@ const LevelSelectModal: React.FC<LevelSelectModalProps> = ({
             onRequestClose={onClose}
         >
             <View style={styles.container}>
-                <Animated.View entering={ZoomIn.duration(400)} style={styles.content}>
-                    <Surface style={styles.card} elevation={5}>
-                        <View style={styles.header}>
-                            <Text variant="headlineSmall" style={styles.title}>{title}</Text>
-                            <IconButton icon="close" onPress={onClose} />
-                        </View>
+                <Animated.View entering={ZoomIn.duration(400)}>
+                    <View style={styles.content}>
+                        <Surface style={styles.card} elevation={5}>
+                            <View style={styles.header}>
+                                <Text variant="headlineSmall" style={styles.title}>{title}</Text>
+                                <IconButton icon="close" onPress={onClose} />
+                            </View>
 
-                        <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
-                            {levels.map((level, index) => (
-                                <TouchableOpacity
-                                    key={level.id}
-                                    style={[
-                                        styles.levelBtn,
-                                        level.locked && styles.lockedBtn,
-                                        { borderColor: theme.colors.primary }
-                                    ]}
-                                    onPress={() => !level.locked && onSelectLevel(level.id)}
-                                    activeOpacity={level.locked ? 1 : 0.7}
-                                >
-                                    {level.locked ? (
-                                        <MaterialCommunityIcons name="lock" size={32} color="#999" />
-                                    ) : (
-                                        <>
-                                            <Text style={[styles.levelNumber, { color: theme.colors.primary }]}>
-                                                {index + 1}
-                                            </Text>
-                                            {level.stars !== undefined && (
-                                                <View style={styles.starsRow}>
-                                                    {[1, 2, 3].map(s => (
-                                                        <MaterialCommunityIcons
-                                                            key={s}
-                                                            name={s <= level.stars! ? "star" : "star-outline"}
-                                                            size={14}
-                                                            color="#FFD700"
-                                                        />
-                                                    ))}
-                                                </View>
-                                            )}
-                                        </>
-                                    )}
-                                    <Text style={styles.levelLabel} numberOfLines={1}>
-                                        {level.title}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </Surface>
+                            <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
+                                {levels.map((level, index) => (
+                                    <TouchableOpacity
+                                        key={level.id}
+                                        style={[
+                                            styles.levelBtn,
+                                            level.locked && styles.lockedBtn,
+                                            { borderColor: theme.colors.primary }
+                                        ]}
+                                        onPress={() => !level.locked && onSelectLevel(level.id)}
+                                        activeOpacity={level.locked ? 1 : 0.7}
+                                    >
+                                        {level.locked ? (
+                                            <MaterialCommunityIcons name="lock" size={32} color="#999" />
+                                        ) : (
+                                            <>
+                                                <Text style={[styles.levelNumber, { color: theme.colors.primary }]}>
+                                                    {index + 1}
+                                                </Text>
+                                                {level.stars !== undefined && (
+                                                    <View style={styles.starsRow}>
+                                                        {[1, 2, 3].map(s => (
+                                                            <MaterialCommunityIcons
+                                                                key={s}
+                                                                name={s <= level.stars! ? "star" : "star-outline"}
+                                                                size={14}
+                                                                color="#FFD700"
+                                                            />
+                                                        ))}
+                                                    </View>
+                                                )}
+                                            </>
+                                        )}
+                                        <Text style={styles.levelLabel} numberOfLines={1}>
+                                            {level.title}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </Surface>
+                    </View>
                 </Animated.View>
             </View>
         </Modal>
