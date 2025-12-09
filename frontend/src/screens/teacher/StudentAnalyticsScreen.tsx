@@ -41,12 +41,12 @@ const StudentAnalyticsScreen = () => {
         }
     };
 
-    const getProficiencyColor = (level: string) => {
+    const getProficiencyColor = (level: string): readonly [string, string] => {
         switch (level) {
-            case 'Advanced': return ['#4CAF50', '#45a049'];
-            case 'Proficient': return ['#2196F3', '#1976D2'];
-            case 'Developing': return ['#FFC107', '#FFA000'];
-            default: return ['#9E9E9E', '#757575'];
+            case 'Advanced': return ['#4CAF50', '#45a049'] as const;
+            case 'Proficient': return ['#2196F3', '#1976D2'] as const;
+            case 'Developing': return ['#FFC107', '#FFA000'] as const;
+            default: return ['#9E9E9E', '#757575'] as const;
         }
     };
 
