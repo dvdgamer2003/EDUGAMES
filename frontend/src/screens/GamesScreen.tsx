@@ -62,18 +62,7 @@ const GamesScreen = ({ navigation }: any) => {
             gameId: 'time_travel_debug'
         },
         // ... (other games need 'gameId' added to match what they save)
-        {
-            id: 103,
-            title: 'Algebra Heist',
-            description: 'Offline Detective Math',
-            icon: 'incognito',
-            color: '#37474F',
-            gradient: ['#263238', '#546E7A'],
-            route: 'AlgebraHeistMap',
-            category: 'Logic',
-            isNew: true,
-            gameId: 'algebra_heist'
-        },
+
         {
             id: 9,
             title: 'Cell Command',

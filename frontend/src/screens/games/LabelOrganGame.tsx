@@ -61,7 +61,7 @@ const getOrganImage = (organName: string) => {
         'Intestines': require('../../../assets/images/organs/intestines.png'),
         'Pancreas': require('../../../assets/images/organs/pancreas.png'),
     };
-    return imageMap[organName] || require('../../../assets/images/organs/human_body.png');
+    return imageMap[organName];
 };
 
 const LabelOrganGame = () => {

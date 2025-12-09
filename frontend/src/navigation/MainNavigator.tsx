@@ -81,8 +81,7 @@ const MainNavigator = () => {
             {/* New Games */}
 
             <Stack.Screen name="TimeTravelDebug" component={require('../screens/games/TimeTravelDebugScreen').default} />
-            <Stack.Screen name="AlgebraHeistMap" component={require('../screens/games/AlgebraHeist/AlgebraHeistMapScreen').default} />
-            <Stack.Screen name="AlgebraHeistCase" component={require('../screens/games/AlgebraHeist/AlgebraHeistCaseScreen').default} />
+
 
 
             {/* Other Screens */}
